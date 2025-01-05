@@ -1,0 +1,44 @@
+services:
+  # app:
+  #   build: .
+  #   ports:
+  #     - "8080:1323"
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - DATABASE_URL=postgres://postgres:postgres@db:5432/libraries?sslmode=disable
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  db:
+    image: postgres:14.13-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=andre-dev
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=library_db
+    ports:
+      - 5433:5432
+    expose:
+      - 5433
+    volumes:
+      - db:/var/lib/postgresql/data
+      - .database/init.sql:/docker-entrypoint-initdb.d/database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "libraries"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - learn_go
+  redis:
+    image: redis:7.4.1-alpine3.20
+    ports:
+      - 6379:6379
+    expose:
+      - 6379
+volumes:
+    db:
+      driver: local
+networks:
+    learn_go:
