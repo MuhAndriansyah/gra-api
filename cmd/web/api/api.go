@@ -1,11 +1,15 @@
 package api
 
 import (
+	"backend-layout/helper"
+	errorHandler "backend-layout/internal/adapter/errors"
 	"backend-layout/internal/config"
 	"backend-layout/internal/middleware"
+	userHttpDelivery "backend-layout/internal/module/user/delivery/http"
+	"backend-layout/internal/module/user/repository"
+	"backend-layout/internal/module/user/usecase"
 	"backend-layout/internal/tasks"
 	"context"
-	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -33,17 +37,19 @@ func NewAPIServer(pool *pgxpool.Pool, taskDistributor tasks.TaskDistributor, con
 func (s *APIServer) Run(ctx context.Context) error {
 	e := echo.New()
 
-	v1 := e.Group("/v1")
+	e.Validator = helper.NewValidator()
+
+	e.HTTPErrorHandler = errorHandler.CustomHTTPErrorHandler
+
+	v1 := e.Group("/api/v1")
 	r := v1.Group("")
 	p := v1.Group("/public")
 
-	p.GET("/hello", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, echo.Map{
-			"status": "true",
-		})
-	})
-
 	r.Use(middleware.JWTAuthenticator())
+
+	userRepository := repository.NewPostgresUserRepository(s.Pool)
+	userUsecase := usecase.NewUserUsecase(userRepository, s.TaskDistributor)
+	userHttpDelivery.NewUserHanlder(p, r, userUsecase)
 
 	go func() {
 		<-ctx.Done()
