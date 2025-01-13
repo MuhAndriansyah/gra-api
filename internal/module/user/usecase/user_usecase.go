@@ -67,7 +67,27 @@ func (u *userUsecase) RegisterUser(ctx context.Context, payload *domain.StoreUse
 
 // VerifyEmailCode implements domain.UserUsecase.
 func (u *userUsecase) VerifyEmailCode(ctx context.Context, payload *domain.VerifyEmailRequest) error {
-	panic("unimplemented")
+	user, err := u.userRepo.GetByEmailVerifyCode(ctx, payload.VerifyCode, payload.Id)
+
+	if err != nil {
+		return err
+	}
+
+	if user == nil {
+		return errors.NewNotFoundError("invalid verification code")
+	}
+
+	if time.Now().After(user.EmailVerifyCodeExpiredAt) {
+		return errors.NewNotFoundError("verification code expired")
+	}
+
+	err = u.userRepo.ValidatingEmail(ctx, payload.VerifyCode, payload.Id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewUserUsecase(ur domain.UserRepository, td tasks.TaskDistributor) domain.UserUsecase {

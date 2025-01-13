@@ -14,6 +14,19 @@ type postgresUserRepository struct {
 
 var querySelectUser = `SELECT id, name, email, password, photo, email_verify_code, email_verify_code_expired_at, verified_at FROM users WHERE 1=1`
 
+// ValidatingEmail implements domain.UserRepository.
+func (p *postgresUserRepository) ValidatingEmail(ctx context.Context, verifyCode string, id int64) error {
+	query := `UPDATE users SET email_verify_code = NULL, email_verify_code_expired_at = NULL, verified_at = NOW() WHERE id=$1 AND email_verify_code = $2;`
+
+	_, err := p.conn.Exec(ctx, query, id, verifyCode)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetByEmail implements domain.UserRepository.
 func (p *postgresUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	user := &domain.User{}

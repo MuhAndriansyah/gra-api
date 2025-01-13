@@ -34,6 +34,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	Store(ctx context.Context, user *User) error
 	GetByEmailVerifyCode(ctx context.Context, verifyCode string, id int64) (*User, error)
+	ValidatingEmail(ctx context.Context, verifyCode string, id int64) error
 }
 
 type UserUsecase interface {
