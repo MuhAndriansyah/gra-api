@@ -5,9 +5,11 @@ import (
 	errorHandler "backend-layout/internal/adapter/errors"
 	"backend-layout/internal/config"
 	"backend-layout/internal/middleware"
+	authHttpDelivery "backend-layout/internal/module/auth/delivery/http"
+	_authUsecase "backend-layout/internal/module/auth/usecase"
 	userHttpDelivery "backend-layout/internal/module/user/delivery/http"
 	"backend-layout/internal/module/user/repository"
-	"backend-layout/internal/module/user/usecase"
+	_userUsecase "backend-layout/internal/module/user/usecase"
 	"backend-layout/internal/tasks"
 	"context"
 
@@ -48,8 +50,11 @@ func (s *APIServer) Run(ctx context.Context) error {
 	r.Use(middleware.JWTAuthenticator())
 
 	userRepository := repository.NewPostgresUserRepository(s.Pool)
-	userUsecase := usecase.NewUserUsecase(userRepository, s.TaskDistributor)
+	userUsecase := _userUsecase.NewUserUsecase(userRepository, s.TaskDistributor)
 	userHttpDelivery.NewUserHanlder(p, r, userUsecase)
+
+	authUsecase := _authUsecase.NewAuthUsecase(userRepository)
+	authHttpDelivery.NewAuthHandler(p, authUsecase, s.Logger)
 
 	go func() {
 		<-ctx.Done()
