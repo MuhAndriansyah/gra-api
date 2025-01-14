@@ -74,11 +74,11 @@ func (u *userUsecase) VerifyEmailCode(ctx context.Context, payload *domain.Verif
 	}
 
 	if user == nil {
-		return errors.NewNotFoundError("invalid verification code")
+		return errors.NewForbiddenError("invalid verification code")
 	}
 
 	if time.Now().After(user.EmailVerifyCodeExpiredAt) {
-		return errors.NewNotFoundError("verification code expired")
+		return errors.NewForbiddenError("verification code expired")
 	}
 
 	err = u.userRepo.ValidatingEmail(ctx, payload.VerifyCode, payload.Id)
