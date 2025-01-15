@@ -38,7 +38,10 @@ func (h *AuthHanlder) Login(c echo.Context) (err error) {
 	res, err := h.authUsecase.Login(ctx, req)
 
 	if err != nil {
-		h.logger.Err(err).Msg("error in usecase Login")
+		h.logger.Err(err).Ctx(ctx).
+			Str("usecase", "Login").
+			Msg("failed to login")
+
 		return err
 	}
 

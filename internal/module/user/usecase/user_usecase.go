@@ -40,12 +40,14 @@ func (u *userUsecase) RegisterUser(ctx context.Context, payload *domain.StoreUse
 		return err
 	}
 
+	verifyCodeExpired := time.Now().Add(24 * time.Hour)
+
 	err = u.userRepo.Store(ctx, &domain.User{
 		Name:                     payload.Name,
 		Email:                    payload.Email,
 		Password:                 string(hashedPassword),
-		EmailVerifyCode:          verifyCode,
-		EmailVerifyCodeExpiredAt: time.Now().Add(24 * time.Hour),
+		EmailVerifyCode:          &verifyCode,
+		EmailVerifyCodeExpiredAt: &verifyCodeExpired,
 	})
 
 	if err != nil {
@@ -77,7 +79,7 @@ func (u *userUsecase) VerifyEmailCode(ctx context.Context, payload *domain.Verif
 		return errors.NewForbiddenError("invalid verification code")
 	}
 
-	if time.Now().After(user.EmailVerifyCodeExpiredAt) {
+	if time.Now().After(*user.EmailVerifyCodeExpiredAt) {
 		return errors.NewForbiddenError("verification code expired")
 	}
 

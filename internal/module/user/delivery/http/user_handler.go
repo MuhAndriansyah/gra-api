@@ -38,7 +38,11 @@ func (h *UserHandler) RegisterUser(c echo.Context) (err error) {
 	err = h.userUsecase.RegisterUser(ctx, req)
 
 	if err != nil {
-		h.logger.Err(err).Msg("error in usecase RegisterUser")
+		h.logger.Err(err).
+			Ctx(ctx).
+			Str("usecase", "RegisterUser").
+			Msg("failed to create user")
+
 		return err
 	}
 
@@ -65,9 +69,12 @@ func (h *UserHandler) VerifyEmail(c echo.Context) (err error) {
 
 	ctx := c.Request().Context()
 	err = h.userUsecase.VerifyEmailCode(ctx, req)
-	
+
 	if err != nil {
-		h.logger.Err(err).Msg("error in usecase VerifyEmail")
+		h.logger.Err(err).Ctx(ctx).
+			Str("usecase", "VerifyEmailCode").
+			Msg("failed to verify email")
+
 		return err
 	}
 

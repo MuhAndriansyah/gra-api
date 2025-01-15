@@ -11,8 +11,8 @@ type User struct {
 	Email                    string
 	Password                 string
 	Photo                    *string
-	EmailVerifyCode          string
-	EmailVerifyCodeExpiredAt time.Time
+	EmailVerifyCode          *string
+	EmailVerifyCodeExpiredAt *time.Time
 	VerifiedAt               *time.Time
 	CreatedAt                time.Time
 	UpdatedAt                time.Time
