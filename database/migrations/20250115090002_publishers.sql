@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE IF NOT EXISTS publisher(
+CREATE TABLE IF NOT EXISTS publishers(
   "id" SERIAL NOT NULL PRIMARY KEY,
   "name" VARCHAR(255),
   "created_at" TIMESTAMPTZ DEFAULT NOW(),
