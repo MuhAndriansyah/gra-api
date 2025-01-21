@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS books (
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ DEFAULT NOW(),
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (publisher_id) REFERENCES publisher(id) ON DELETE NO ACTION ON UPDATE NO ACTION
+    FOREIGN KEY (publisher_id) REFERENCES publishers(id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 -- +goose StatementEnd
 
