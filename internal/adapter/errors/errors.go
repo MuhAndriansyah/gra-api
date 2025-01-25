@@ -14,7 +14,6 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	code := http.StatusInternalServerError
 	message := "Something went wrong"
 	var validateError any
-	var data any
 
 	if httpError, ok := err.(*echo.HTTPError); ok {
 		code = httpError.Code
@@ -23,7 +22,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	switch v := err.(type) {
 	case *echo.HTTPError:
 		code = v.Code
-		data = v.Message
+		validateError = v.Message
 	case validator.ValidationErrors:
 		code = http.StatusBadRequest
 		message = "Validation error"
@@ -45,7 +44,6 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 
 	errResponse := ErrorResponse{
 		Message: message,
-		Data:    data,
 		Errors:  validateError,
 	}
 
@@ -54,7 +52,6 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 
 type ErrorResponse struct {
 	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
 	Errors  any    `json:"errors,omitempty"`
 }
 

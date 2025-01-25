@@ -26,19 +26,16 @@ func (au *authUsecase) Login(ctx context.Context, payload *domain.LoginRequest) 
 	user, err := au.userRepo.GetByEmail(ctx, payload.Email)
 
 	if err != nil {
-		fmt.Println("1", err)
 		return domain.LoginResponse{}, err
 	}
 
 	if user == nil {
-		fmt.Println("2", err)
 		return domain.LoginResponse{}, errors.NewUnauthorized("invalid email or password")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
 
 	if err != nil {
-		fmt.Println("3", err)
 		return domain.LoginResponse{}, errors.NewUnauthorized("invalid email or password")
 	}
 	expiration := time.Minute * 60
@@ -49,7 +46,6 @@ func (au *authUsecase) Login(ctx context.Context, payload *domain.LoginRequest) 
 	})
 
 	if err != nil {
-		fmt.Println("4")
 		return domain.LoginResponse{}, err
 	}
 

@@ -7,8 +7,11 @@ import (
 	"backend-layout/internal/middleware"
 	authHttpDelivery "backend-layout/internal/module/auth/delivery/http"
 	_authUsecase "backend-layout/internal/module/auth/usecase"
+	bookHttpDelivery "backend-layout/internal/module/book/delivery/http"
+	_bookRepository "backend-layout/internal/module/book/repository"
+	_bookUsecase "backend-layout/internal/module/book/usecase"
 	userHttpDelivery "backend-layout/internal/module/user/delivery/http"
-	"backend-layout/internal/module/user/repository"
+	_userRepository "backend-layout/internal/module/user/repository"
 	_userUsecase "backend-layout/internal/module/user/usecase"
 	"backend-layout/internal/tasks"
 	"context"
@@ -49,12 +52,16 @@ func (s *APIServer) Run(ctx context.Context) error {
 
 	r.Use(middleware.JWTAuthenticator())
 
-	userRepository := repository.NewPostgresUserRepository(s.Pool)
+	userRepository := _userRepository.NewPostgresUserRepository(s.Pool)
 	userUsecase := _userUsecase.NewUserUsecase(userRepository, s.TaskDistributor)
 	userHttpDelivery.NewUserHanlder(p, r, userUsecase)
 
 	authUsecase := _authUsecase.NewAuthUsecase(userRepository)
 	authHttpDelivery.NewAuthHandler(p, authUsecase, s.Logger)
+
+	bookRepository := _bookRepository.NewPostgresBookRepository(s.Pool)
+	bookUsecase := _bookUsecase.NewBookUsecase(bookRepository)
+	bookHttpDelivery.NewUserHanlder(p, r, bookUsecase, s.Logger)
 
 	go func() {
 		<-ctx.Done()

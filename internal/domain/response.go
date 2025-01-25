@@ -1,7 +1,7 @@
 package domain
 
 type ResponseBody struct {
-	Data interface{} `json:"errors,omitempty"`
+	Data interface{} `json:"data,omitempty"`
 	Meta *Pagination `json:"meta,omitempty"`
 }
 
