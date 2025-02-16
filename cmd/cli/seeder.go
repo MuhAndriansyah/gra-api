@@ -14,7 +14,7 @@ import (
 func main() {
 	fmt.Println("start seeder...")
 
-	cfg, err := config.NewConfig(".env")
+	cfg, err := config.NewConfig("./../../.env")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
@@ -88,7 +88,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   220,
 			Description: "lorem ipsum",
 			Sku:         "208381357",
@@ -104,7 +104,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   300,
 			Description: "lorem ipsum",
 			Sku:         "208361329",
@@ -120,7 +120,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2024",
+			PublishYear: 2024,
 			TotalPage:   350,
 			Description: "lorem ipsum",
 			Sku:         "208343747",
@@ -136,7 +136,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   200,
 			Description: "lorem ipsum",
 			Sku:         "208340018",
@@ -152,7 +152,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2024",
+			PublishYear: 2024,
 			TotalPage:   300,
 			Description: "lorem ipsum",
 			Sku:         "723050784",
@@ -168,7 +168,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2024",
+			PublishYear: 2024,
 			TotalPage:   325,
 			Description: "lorem ipsum",
 			Sku:         "208335971",
@@ -184,7 +184,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   400,
 			Description: "lorem ipsum",
 			Sku:         "208310800",
@@ -200,7 +200,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2015",
+			PublishYear: 2015,
 			TotalPage:   240,
 			Description: "lorem ipsum",
 			Sku:         "208312164",
@@ -216,7 +216,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   250,
 			Description: "lorem ipsum",
 			Sku:         "208298701",
@@ -232,7 +232,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   320,
 			Description: "lorem ipsum",
 			Sku:         "208123719",
@@ -248,7 +248,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2025",
+			PublishYear: 2025,
 			TotalPage:   450,
 			Description: "lorem ipsum",
 			Sku:         "208033038",
@@ -264,7 +264,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2023",
+			PublishYear: 2023,
 			TotalPage:   200,
 			Description: "lorem ipsum",
 			Sku:         "208018288",
@@ -280,7 +280,7 @@ func (s *seeder) seedBook(ctx context.Context, tx pgx.Tx) error {
 			Publisher: domain.Publisher{
 				Id: 1,
 			},
-			PublishYear: "2024",
+			PublishYear: 2024,
 			TotalPage:   300,
 			Description: "lorem ipsum",
 			Sku:         "718051071",

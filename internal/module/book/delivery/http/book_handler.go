@@ -3,27 +3,29 @@ package http
 import (
 	"backend-layout/helper"
 	"backend-layout/internal/domain"
-	"backend-layout/internal/module/book/repository"
+	"backend-layout/internal/middleware"
+
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type BookHandler struct {
 	bookUsecase domain.BookUsecase
-	logger      zerolog.Logger
 }
 
-func NewUserHanlder(p *echo.Group, r *echo.Group, bu domain.BookUsecase, logger zerolog.Logger) {
+func NewBookHanlder(p *echo.Group, r *echo.Group, bu domain.BookUsecase) {
 	handler := &BookHandler{
 		bookUsecase: bu,
-		logger:      logger,
 	}
 
 	p.GET("/books", handler.List)
 	p.POST("/books", handler.Store)
+	p.GET("/books/:id", handler.Get)
+	p.DELETE("/books/:id", handler.Delete)
+	p.PATCH("/books/:id", handler.Update)
 }
 
 func (h *BookHandler) List(c echo.Context) (err error) {
@@ -41,27 +43,29 @@ func (h *BookHandler) List(c echo.Context) (err error) {
 	listBooks, total, err := h.bookUsecase.Fetch(ctx, params)
 
 	if err != nil {
-		h.logger.Err(err).
-			Str("book_usecase", "fetch").
-			Str("book_handler", "list").
-			Msg("failed to create book")
+		log.Err(err).Msg("failed to fetch book")
 
 		return err
 	}
 
-	var listBookRes = make([]domain.BookResponse, len(listBooks))
+	var booksResponse = make([]domain.BookResponse, len(listBooks))
 
 	for i, v := range listBooks {
-		listBookRes[i] = *domain.BookToResponse(&v)
+		booksResponse[i] = *domain.BookToResponse(&v)
 	}
 
-	res := helper.Paginate(c, listBookRes, total, params)
+	res := helper.Paginate(c, booksResponse, total, params)
 
 	return c.JSON(http.StatusOK, res)
 }
 
 func (h *BookHandler) Store(c echo.Context) error {
 	req := new(domain.StoreBookRequest)
+
+	correlationID, ok := c.Request().Context().Value(middleware.CorrelationIDKey).(string)
+	if !ok {
+		correlationID = "unknown"
+	}
 
 	if err := c.Bind(req); err != nil {
 		return err
@@ -76,14 +80,15 @@ func (h *BookHandler) Store(c echo.Context) error {
 	id, err := h.bookUsecase.Store(ctx, req)
 
 	if err != nil {
-		h.logger.Err(err).
-			Str("book_usecase", "store").
-			Str("handler", "store").
-			Msg("failed to create book")
 
-		if err == repository.ErrISBNDuplicateEntry {
-			return echo.NewHTTPError(http.StatusConflict, "isbn already exists")
-		}
+		log.Err(err).
+			Str("coreelation_id", correlationID).
+			Str("service", "book-service").
+			Str("layer", "handler").
+			Str("func", "store").
+			Str("method", "POST").
+			Str("path", c.Path()).
+			Msg("failed to create book")
 
 		return err
 	}
@@ -91,4 +96,72 @@ func (h *BookHandler) Store(c echo.Context) error {
 	return c.JSON(http.StatusCreated, echo.Map{"message": "Book created succesfully", "data": echo.Map{
 		"id": id,
 	}})
+}
+
+func (h *BookHandler) Get(c echo.Context) error {
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid book ID format")
+	}
+
+	ctx := c.Request().Context()
+
+	book, err := h.bookUsecase.Get(ctx, id)
+
+	if err != nil {
+		log.Err(err).Msg("failed to get book")
+		return err
+	}
+
+	return c.JSON(http.StatusOK, book)
+}
+
+func (h *BookHandler) Delete(c echo.Context) error {
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid book ID format")
+	}
+
+	ctx := c.Request().Context()
+
+	err = h.bookUsecase.Delete(ctx, id)
+
+	if err != nil {
+		log.Err(err).Msg("failed to delete book")
+		return err
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": "book deleted succesfully"})
+
+}
+
+func (h *BookHandler) Update(c echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid book ID format")
+	}
+
+	req := new(domain.UpdateBookRequest)
+	req.ID = id
+
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	if err := c.Validate(req); err != nil {
+		return err
+	}
+
+	ctx := c.Request().Context()
+
+	err = h.bookUsecase.Update(ctx, req)
+
+	if err != nil {
+		log.Err(err).Msg("failed to update book")
+		return err
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": "book updated successfully"})
 }

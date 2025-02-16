@@ -9,7 +9,7 @@ import (
 	"backend-layout/internal/tasks"
 	"context"
 	"fmt"
-	"log"
+
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,7 +17,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -30,23 +30,25 @@ var interruptSignals = []os.Signal{
 func main() {
 	cfg, err := config.NewConfig(".env")
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Fatal().Err(err).Msg("Failed to load config")
 	}
 
-	logger := instrumentation.NewLogger(cfg)
+	logFn := instrumentation.InitializeLogger(cfg.App)
+	defer logFn()
+
 	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
 	defer stop()
 
 	dbpool, err := initDatabase(cfg, ctx)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to initialize database")
+		log.Fatal().Err(err).Msg("failed to initialize database")
 		return
 	}
 	defer dbpool.Close()
 
 	redisTaskDistributor, err := initRedisTaskDistributor(cfg)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to initialize Redis task distributor")
+		log.Fatal().Err(err).Msg("failed to initialize Redis task distributor")
 		return
 	}
 	defer redisTaskDistributor.Close()
@@ -57,22 +59,22 @@ func main() {
 	// 	return
 	// }
 
-	srv := api.NewAPIServer(dbpool, redisTaskDistributor, cfg, logger)
+	srv := api.NewAPIServer(dbpool, redisTaskDistributor, cfg)
 
 	waitGroup, ctx := errgroup.WithContext(ctx)
 
-	runTaskProcessor(ctx, waitGroup, logger)
+	runTaskProcessor(ctx, waitGroup)
 
 	if err := srv.Run(ctx); err != nil {
 		if err == http.ErrServerClosed {
-			logger.Info().Msg("server gracefully stopped")
+			log.Info().Msg("server gracefully stopped")
 		} else {
-			logger.Fatal().Err(err).Msg("server error")
+			log.Fatal().Err(err).Msg("server error")
 		}
 	}
 
 	if err := waitGroup.Wait(); err != nil {
-		logger.Fatal().Err(err).Msg("error from wait group")
+		log.Fatal().Err(err).Msg("error from wait group")
 	}
 }
 
@@ -90,12 +92,12 @@ func initRedisTaskDistributor(cfg *config.Config) (tasks.TaskDistributor, error)
 }
 
 func runTaskProcessor(ctx context.Context,
-	waitGroup *errgroup.Group, logger zerolog.Logger) {
+	waitGroup *errgroup.Group) {
 
 	taskProcessor := worker.NewTaskProcessor()
 	waitGroup.Go(func() error {
 		if err := taskProcessor.Start(); err != nil {
-			logger.Fatal().Err(err).Msg("failed to start task processor")
+			log.Fatal().Err(err).Msg("failed to start task processor")
 			return err
 		}
 		return nil
@@ -103,10 +105,10 @@ func runTaskProcessor(ctx context.Context,
 
 	waitGroup.Go(func() error {
 		<-ctx.Done()
-		logger.Info().Msg("graceful shutdown task processor")
+		log.Info().Msg("graceful shutdown task processor")
 
 		taskProcessor.Shutdown()
-		logger.Info().Msg("task processor is stopped")
+		log.Info().Msg("task processor is stopped")
 
 		return nil
 	})

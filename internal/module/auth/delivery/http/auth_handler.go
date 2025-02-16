@@ -2,21 +2,20 @@ package http
 
 import (
 	"backend-layout/internal/domain"
+
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type AuthHanlder struct {
 	authUsecase domain.AuthUsecase
-	logger      zerolog.Logger
 }
 
-func NewAuthHandler(e *echo.Group, au domain.AuthUsecase, logger zerolog.Logger) {
+func NewAuthHandler(e *echo.Group, au domain.AuthUsecase) {
 	handler := &AuthHanlder{
 		authUsecase: au,
-		logger:      logger,
 	}
 
 	e.POST("/users/login", handler.Login)
@@ -38,7 +37,7 @@ func (h *AuthHanlder) Login(c echo.Context) (err error) {
 	res, err := h.authUsecase.Login(ctx, req)
 
 	if err != nil {
-		h.logger.Err(err).Ctx(ctx).
+		log.Err(err).Ctx(ctx).
 			Str("usecase", "Login").
 			Msg("failed to login")
 

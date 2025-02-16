@@ -18,24 +18,22 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type APIServer struct {
 	Pool            *pgxpool.Pool
 	TaskDistributor tasks.TaskDistributor
 	// S3              storage.Uploader
-	Conf   *config.Config
-	Logger zerolog.Logger
+	Conf *config.Config
 }
 
-func NewAPIServer(pool *pgxpool.Pool, taskDistributor tasks.TaskDistributor, conf *config.Config, logger zerolog.Logger) *APIServer {
+func NewAPIServer(pool *pgxpool.Pool, taskDistributor tasks.TaskDistributor, conf *config.Config) *APIServer {
 	return &APIServer{
 		Pool:            pool,
 		TaskDistributor: taskDistributor,
 		// S3:              s3,
-		Conf:   conf,
-		Logger: logger,
+		Conf: conf,
 	}
 }
 
@@ -43,7 +41,7 @@ func (s *APIServer) Run(ctx context.Context) error {
 	e := echo.New()
 
 	e.Validator = helper.NewValidator()
-
+	e.Use(middleware.CorrelationIDMiddleware)
 	e.HTTPErrorHandler = errorHandler.CustomHTTPErrorHandler
 
 	v1 := e.Group("/api/v1")
@@ -57,17 +55,17 @@ func (s *APIServer) Run(ctx context.Context) error {
 	userHttpDelivery.NewUserHanlder(p, r, userUsecase)
 
 	authUsecase := _authUsecase.NewAuthUsecase(userRepository)
-	authHttpDelivery.NewAuthHandler(p, authUsecase, s.Logger)
+	authHttpDelivery.NewAuthHandler(p, authUsecase)
 
 	bookRepository := _bookRepository.NewPostgresBookRepository(s.Pool)
 	bookUsecase := _bookUsecase.NewBookUsecase(bookRepository)
-	bookHttpDelivery.NewUserHanlder(p, r, bookUsecase, s.Logger)
+	bookHttpDelivery.NewBookHanlder(p, r, bookUsecase)
 
 	go func() {
 		<-ctx.Done()
-		s.Logger.Info().Msg("shutting down server...")
+		log.Info().Msg("shutting down server...")
 		if err := e.Shutdown(ctx); err != nil {
-			s.Logger.Error().Err(err).Msg("server shutdown error")
+			log.Error().Err(err).Msg("server shutdown error")
 		}
 	}()
 

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS books (
     "slug" VARCHAR(255) NOT NULL,
     "author_id" INT NOT NULL,
     "publisher_id" INT NOT NULL,
-    "publish_year" VARCHAR(10) NOT NULL,
+    "publish_year" SMALLINT NOT NULL,
     "total_page" INT NOT NULL,
     "description" TEXT,
     "sku" VARCHAR(255) NOT NULL,

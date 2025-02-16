@@ -5,7 +5,6 @@ import (
 	"backend-layout/internal/adapter/jwt"
 	"backend-layout/internal/domain"
 	"context"
-	"fmt"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"

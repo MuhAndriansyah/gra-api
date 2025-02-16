@@ -11,9 +11,9 @@ const (
         books.id,
         books.title,
         books.slug,
-				books.author_id,
+		books.author_id,
         authors.name as author_name,
-				books.publisher_id,
+		books.publisher_id,
         publishers.name as publisher_name,
         books.publish_year,
         books.total_page,
@@ -21,6 +21,7 @@ const (
         books.sku,
         books.isbn,
         books.price,
+		STRING_AGG(c.name, ',') as category_name,
         books.created_at,
         books.updated_at
     `
@@ -30,7 +31,13 @@ const (
         FROM books
         JOIN authors ON authors.id = books.author_id
         JOIN publishers ON publishers.id = books.publisher_id
+		JOIN book_category bc ON books.id = bc.book_id
+		JOIN categories c ON bc.category_id = c.id
         WHERE 1=1
+		GROUP BY books.id, books.title, books.slug, books.author_id, 
+		authors.name, books.publisher_id, publishers.name, 
+		books.publish_year, books.total_page, books.description, 
+		books.sku, books.isbn, books.price, books.created_at, books.updated_at
     `
 
 	countQuery = `

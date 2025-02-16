@@ -2,52 +2,48 @@ package errors
 
 import (
 	"backend-layout/helper"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // ErrorHandler ...
 func CustomHTTPErrorHandler(err error, c echo.Context) {
 	code := http.StatusInternalServerError
 	message := "Something went wrong"
-	var validateError any
+	var errorDetails any
 
-	if httpError, ok := err.(*echo.HTTPError); ok {
+	// Prioritaskan baseError
+	var baseErr baseError
+	if errors.As(err, &baseErr) {
+		code = baseErr.code
+		message = baseErr.message
+	} else if httpError, ok := err.(*echo.HTTPError); ok {
 		code = httpError.Code
-	}
-
-	switch v := err.(type) {
-	case *echo.HTTPError:
-		code = v.Code
-		validateError = v.Message
-	case validator.ValidationErrors:
+		message = fmt.Sprintf("%v", httpError.Message)
+		errorDetails = httpError.Internal
+	} else if vErr, ok := err.(validator.ValidationErrors); ok {
 		code = http.StatusBadRequest
 		message = "Validation error"
-
-		// Access the validator instance from Echo to get the translator
 		if vld, ok := c.Echo().Validator.(*helper.Validator); ok {
-			validateError = vld.TranslateError(err)
-		} else {
-			validateError = "Validation errors"
-		}
-	case baseError:
-		code = v.code
-		message = v.Error()
-	default:
-		if err != nil {
-			message = err.Error()
+			errorDetails = vld.TranslateError(vErr)
 		}
 	}
 
-	errResponse := ErrorResponse{
+	// Log error yang tidak terduga
+	if code >= 500 {
+		log.Error().Err(err).Msg("unexpected error")
+	}
+
+	c.JSON(code, ErrorResponse{
 		Message: message,
-		Errors:  validateError,
-	}
-
-	c.JSON(code, errResponse)
+		Errors:  errorDetails,
+	})
 }
 
 type ErrorResponse struct {
@@ -89,4 +85,8 @@ func NewConflictError(message string) baseError {
 
 func NewUnauthorized(message string) baseError {
 	return newBaseError(http.StatusUnauthorized, message)
+}
+
+func NewInternalServerError(message string) baseError {
+	return newBaseError(http.StatusInternalServerError, message)
 }
