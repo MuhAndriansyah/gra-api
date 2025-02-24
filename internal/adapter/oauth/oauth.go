@@ -31,8 +31,6 @@ func (o *Oauth) ExhangeCodeForToken(ctx context.Context, code string) (*oauth2.T
 	return o.googleOAuthConfig.Exchange(ctx, code)
 }
 
-func (o *Oauth) AuthUrlGoogleLogin() string {
-	state := "ini-akan-jadi-random-string"
-
-	return o.googleOAuthConfig.AuthCodeURL(state)
+func (o *Oauth) AuthUrlGoogleLogin(state string) (string, error) {
+	return o.googleOAuthConfig.AuthCodeURL(state), nil
 }

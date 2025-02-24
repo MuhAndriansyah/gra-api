@@ -4,6 +4,7 @@ import (
 	"backend-layout/cmd/web/api"
 	"backend-layout/internal/adapter/db"
 	"backend-layout/internal/adapter/instrumentation"
+	"backend-layout/internal/adapter/oauth"
 	"backend-layout/internal/adapter/worker"
 	"backend-layout/internal/config"
 	"backend-layout/internal/tasks"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
@@ -46,6 +48,14 @@ func main() {
 	}
 	defer dbpool.Close()
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	oauth2 := oauth.NewOauth(cfg.OAuth)
+
 	redisTaskDistributor, err := initRedisTaskDistributor(cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize Redis task distributor")
@@ -59,7 +69,7 @@ func main() {
 	// 	return
 	// }
 
-	srv := api.NewAPIServer(dbpool, redisTaskDistributor, cfg)
+	srv := api.NewAPIServer(dbpool, redisTaskDistributor, cfg, oauth2, rdb)
 
 	waitGroup, ctx := errgroup.WithContext(ctx)
 

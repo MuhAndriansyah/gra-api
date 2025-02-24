@@ -12,6 +12,7 @@ type Config struct {
 	Mail  MailConfig
 	Redis RedisConfig
 	AWS   AWSConfig
+	OAuth OauthConfig
 }
 
 func NewConfig(path string) (*Config, error) {
@@ -28,5 +29,6 @@ func NewConfig(path string) (*Config, error) {
 		Mail:  LoadMailConfig(),
 		Redis: LoadRedisConfig(),
 		AWS:   LoadAwsConfig(),
+		OAuth: LoadOauthConfig(),
 	}, nil
 }
