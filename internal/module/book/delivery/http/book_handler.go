@@ -14,18 +14,20 @@ import (
 
 type BookHandler struct {
 	bookUsecase domain.BookUsecase
+	rbac        *middleware.RBACMiddleware
 }
 
-func NewBookHanlder(p *echo.Group, r *echo.Group, bu domain.BookUsecase) {
+func NewBookHandler(p *echo.Group, r *echo.Group, bu domain.BookUsecase, rbac *middleware.RBACMiddleware) {
 	handler := &BookHandler{
 		bookUsecase: bu,
+		rbac:        rbac,
 	}
 
 	p.GET("/books", handler.List)
-	p.POST("/books", handler.Store)
+	r.POST("/books", handler.Store, rbac.RequiredPermission("book:create"))
 	p.GET("/books/:id", handler.Get)
-	p.DELETE("/books/:id", handler.Delete)
-	p.PATCH("/books/:id", handler.Update)
+	r.DELETE("/books/:id", handler.Delete, rbac.RequiredPermission("book:delete"))
+	r.PATCH("/books/:id", handler.Update, rbac.RequiredPermission("book:update"))
 }
 
 func (h *BookHandler) List(c echo.Context) (err error) {

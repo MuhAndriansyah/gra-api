@@ -14,7 +14,7 @@ type UserHandler struct {
 	logger      zerolog.Logger
 }
 
-func NewUserHanlder(e *echo.Group, r *echo.Group, uu domain.UserUsecase) {
+func NewUserHandler(e *echo.Group, r *echo.Group, uu domain.UserUsecase) {
 	handler := &UserHandler{
 		userUsecase: uu,
 	}

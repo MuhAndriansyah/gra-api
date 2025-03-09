@@ -11,6 +11,8 @@ import (
 	bookHttpDelivery "backend-layout/internal/module/book/delivery/http"
 	_bookRepository "backend-layout/internal/module/book/repository"
 	_bookUsecase "backend-layout/internal/module/book/usecase"
+	_rbacReposiotry "backend-layout/internal/module/rbac/repository"
+	_rbacUsecase "backend-layout/internal/module/rbac/usecase"
 	userHttpDelivery "backend-layout/internal/module/user/delivery/http"
 	_userRepository "backend-layout/internal/module/user/repository"
 	_userUsecase "backend-layout/internal/module/user/usecase"
@@ -57,16 +59,20 @@ func (s *APIServer) Run(ctx context.Context) error {
 
 	r.Use(middleware.JWTAuthenticator())
 
+	rbacRepository := _rbacReposiotry.NewRBACRepository(s.Pool)
+	rbacUsecase := _rbacUsecase.NewRBACUsecase(rbacRepository)
+	middlewareRBAC := middleware.NewRBACMiddleware(rbacUsecase)
+
 	userRepository := _userRepository.NewPostgresUserRepository(s.Pool)
 	userUsecase := _userUsecase.NewUserUsecase(userRepository, s.TaskDistributor)
-	userHttpDelivery.NewUserHanlder(p, r, userUsecase)
+	userHttpDelivery.NewUserHandler(p, r, userUsecase)
 
 	authUsecase := _authUsecase.NewAuthUsecase(userRepository, s.rdb)
 	authHttpDelivery.NewAuthHandler(p, authUsecase, s.OAuth, s.rdb)
 
 	bookRepository := _bookRepository.NewPostgresBookRepository(s.Pool)
 	bookUsecase := _bookUsecase.NewBookUsecase(bookRepository)
-	bookHttpDelivery.NewBookHanlder(p, r, bookUsecase)
+	bookHttpDelivery.NewBookHandler(p, r, bookUsecase, middlewareRBAC)
 
 	go func() {
 		<-ctx.Done()
