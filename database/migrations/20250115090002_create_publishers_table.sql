@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS publishers(
 
 -- +goose Down
 -- +goose StatementBegin
-drop table publishers;
+DROP TABLE publishers;
 -- +goose StatementEnd

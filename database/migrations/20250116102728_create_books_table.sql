@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS books (
     "sku" VARCHAR(255) NOT NULL,
     "isbn" VARCHAR(255) NOT NULL UNIQUE,
     "price" NUMERIC(12, 2),
+    "total_stock" INT NOT NULL CHECK(total_stock >= 1),
+    "in_stock" INT NOT NULL CHECK(in_stock >= 0),
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ DEFAULT NOW(),
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE NO ACTION ON UPDATE NO ACTION,
