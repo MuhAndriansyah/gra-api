@@ -84,7 +84,7 @@ func (p *postgresBookRepository) Update(ctx context.Context, tx pgx.Tx, book *do
 	if _, err := tx.Exec(ctx, `DELETE FROM book_category WHERE book_id=$1`, book.Id); err != nil {
 		return fmt.Errorf("failed to delete existing categories :%w", err)
 	}
-	
+
 	_, err = tx.CopyFrom(ctx, pgx.Identifier{"book_category"}, []string{"category_id", "book_id"}, pgx.CopyFromSlice(len(book.CategoryID), func(i int) ([]any, error) {
 		return []any{book.CategoryID[i], book.Id}, nil
 	}))
@@ -221,6 +221,7 @@ func (p *postgresBookRepository) Fetch(ctx context.Context, params domain.Reques
 			&t.TotalPage,
 			&t.Description,
 			&t.Sku,
+			&t.Stock,
 			&t.Isbn,
 			&t.Price,
 			&t.CategoryName,

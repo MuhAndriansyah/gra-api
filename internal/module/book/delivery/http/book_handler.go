@@ -53,7 +53,7 @@ func (h *BookHandler) List(c echo.Context) (err error) {
 	var booksResponse = make([]domain.BookResponse, len(listBooks))
 
 	for i, v := range listBooks {
-		booksResponse[i] = *domain.BookToResponse(&v)
+		booksResponse[i] = domain.BookToResponse(&v)
 	}
 
 	res := helper.Paginate(c, booksResponse, total, params)

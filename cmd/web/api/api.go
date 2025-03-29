@@ -11,6 +11,9 @@ import (
 	bookHttpDelivery "backend-layout/internal/module/book/delivery/http"
 	_bookRepository "backend-layout/internal/module/book/repository"
 	_bookUsecase "backend-layout/internal/module/book/usecase"
+	cartHttpDelivery "backend-layout/internal/module/cart/delivery/http"
+	_cartReposiotry "backend-layout/internal/module/cart/repository"
+	_cartUsecase "backend-layout/internal/module/cart/usecase"
 	_rbacReposiotry "backend-layout/internal/module/rbac/repository"
 	_rbacUsecase "backend-layout/internal/module/rbac/usecase"
 	userHttpDelivery "backend-layout/internal/module/user/delivery/http"
@@ -73,6 +76,10 @@ func (s *APIServer) Run(ctx context.Context) error {
 	bookRepository := _bookRepository.NewPostgresBookRepository(s.Pool)
 	bookUsecase := _bookUsecase.NewBookUsecase(bookRepository)
 	bookHttpDelivery.NewBookHandler(p, r, bookUsecase, middlewareRBAC)
+
+	cartRepository := _cartReposiotry.NewCartRepository(s.Pool)
+	cartUsecase := _cartUsecase.NewCartUsecase(cartRepository)
+	cartHttpDelivery.NewCartHandler(r, cartUsecase)
 
 	go func() {
 		<-ctx.Done()

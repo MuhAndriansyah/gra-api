@@ -35,17 +35,18 @@ func (b *BookUsecase) Delete(ctx context.Context, id int64) error {
 }
 
 // Get implements domain.BookUsecase.
-func (b *BookUsecase) Get(ctx context.Context, id int64) (*domain.BookResponse, error) {
+func (b *BookUsecase) Get(ctx context.Context, id int64) (domain.BookResponse, error) {
 	book, err := b.bookRepo.GetByID(ctx, id)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrBookNotFound) {
-			return nil, baseErr.NewNotFoundError("book not found")
+			log.Warn().Int64("book_id", id).Str("layer", "usecase").Msg("book not found")
+			return domain.BookResponse{}, baseErr.NewNotFoundError("book not found")
 		}
 
-		log.Error().Err(err).Str("layer", "usecase").Msg("failed to get book")
+		log.Error().Err(err).Str("layer", "usecase").Int64("book_id", id).Msg("failed to get book")
 
-		return nil, baseErr.NewInternalServerError("failed to get book")
+		return domain.BookResponse{}, baseErr.NewInternalServerError("failed to get book")
 	}
 
 	return domain.BookToResponse(book), nil

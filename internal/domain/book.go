@@ -18,6 +18,7 @@ type Book struct {
 	TotalPage    int
 	Description  string
 	Sku          string
+	Stock        int64
 	Isbn         string
 	Price        float64
 	CategoryName string
@@ -36,6 +37,7 @@ type BookResponse struct {
 	TotalPage     int       `json:"total_page"`
 	Description   string    `json:"description"`
 	Sku           string    `json:"sku"`
+	Stock         int64     `json:"stock"`
 	Isbn          string    `json:"isbn"`
 	Price         float64   `json:"price"`
 	CategoryName  []string  `json:"category_name"`
@@ -43,8 +45,8 @@ type BookResponse struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-func BookToResponse(b *Book) *BookResponse {
-	return &BookResponse{
+func BookToResponse(b *Book) BookResponse {
+	return BookResponse{
 		Id:            b.Id,
 		Title:         b.Title,
 		Slug:          b.Slug,
@@ -101,5 +103,5 @@ type BookUsecase interface {
 	Store(ctx context.Context, input *StoreBookRequest) (int64, error)
 	Update(ctx context.Context, input *UpdateBookRequest) error
 	Delete(ctx context.Context, id int64) error
-	Get(ctx context.Context, id int64) (*BookResponse, error)
+	Get(ctx context.Context, id int64) (BookResponse, error)
 }

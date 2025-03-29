@@ -19,6 +19,7 @@ const (
         books.total_page,
         books.description,
         books.sku,
+		books.in_stock,
         books.isbn,
         books.price,
 		STRING_AGG(c.name, ',') as category_name,
