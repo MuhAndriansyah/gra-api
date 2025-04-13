@@ -8,6 +8,7 @@ import (
 	"backend-layout/internal/module/book/repository"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -53,18 +54,13 @@ func (b *BookUsecase) Get(ctx context.Context, id int64) (domain.BookResponse, e
 }
 
 // Update implements domain.BookUsecase.
-func (b *BookUsecase) Update(ctx context.Context, input *domain.UpdateBookRequest) error {
-
+func (b *BookUsecase) Update(ctx context.Context, input *domain.UpdateBookRequest) (err error) {
 	book := domain.Book{
-		Id:    input.ID,
-		Title: input.Title,
-		Slug:  toSlug(input.Title),
-		Author: domain.Author{
-			Id: input.AuthorID,
-		},
-		Publisher: domain.Publisher{
-			Id: input.PublisherID,
-		},
+		Id:          input.ID,
+		Title:       input.Title,
+		Slug:        toSlug(input.Title),
+		Author:      domain.Author{Id: input.AuthorID},
+		Publisher:   domain.Publisher{Id: input.PublisherID},
 		PublishYear: input.PublishYear,
 		TotalPage:   input.TotalPage,
 		Description: input.Description,
@@ -74,26 +70,36 @@ func (b *BookUsecase) Update(ctx context.Context, input *domain.UpdateBookReques
 	}
 
 	tx, err := b.bookRepo.GetTx(ctx)
-
 	if err != nil {
 		log.Error().Err(err).Str("layer", "usecase").Msg("failed to begin transaction")
-
 		return baseErr.NewInternalServerError("failed to update book")
 	}
 
 	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		} else {
-			tx.Commit(ctx)
+		if p := recover(); p != nil {
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				log.Error().Err(rbErr).Str("layer", "usecase").Msg("failed to rollback tx")
+			}
+
+			panic(p)
+		} else if err != nil {
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				err = fmt.Errorf("original error: %w, rollback error: %v", err, rbErr)
+			}
 		}
 	}()
 
-	if err := b.bookRepo.Update(ctx, tx, &book); err != nil {
+	if err = b.bookRepo.Update(ctx, tx, &book); err != nil {
 		if errors.Is(err, repository.ErrBookNotFound) {
 			return baseErr.NewNotFoundError("book not found")
 		}
 
+		log.Error().Err(err).Str("layer", "usecase").Msg("failed to update book")
+
+		return baseErr.NewInternalServerError("failed to update book")
+	}
+
+	if err = tx.Commit(ctx); err != nil {
 		log.Error().Err(err).Str("layer", "usecase").Msg("failed to update book")
 
 		return baseErr.NewInternalServerError("failed to update book")

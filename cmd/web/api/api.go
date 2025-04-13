@@ -20,6 +20,10 @@ import (
 	_userRepository "backend-layout/internal/module/user/repository"
 	_userUsecase "backend-layout/internal/module/user/usecase"
 
+	orderHttpDelivery "backend-layout/internal/module/order/delivery/http"
+	_orderRepository "backend-layout/internal/module/order/repository"
+	_orderUsecase "backend-layout/internal/module/order/usecase"
+
 	"backend-layout/internal/tasks"
 	"context"
 
@@ -80,6 +84,10 @@ func (s *APIServer) Run(ctx context.Context) error {
 	cartRepository := _cartReposiotry.NewCartRepository(s.Pool)
 	cartUsecase := _cartUsecase.NewCartUsecase(cartRepository)
 	cartHttpDelivery.NewCartHandler(r, cartUsecase)
+
+	orderRepository := _orderRepository.NewPostgresOrderRepository(s.Pool)
+	orderUsecase := _orderUsecase.NewOrderUsecase(orderRepository)
+	orderHttpDelivery.NewOrderHandler(r, orderUsecase)
 
 	go func() {
 		<-ctx.Done()
