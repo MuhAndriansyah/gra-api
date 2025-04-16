@@ -38,6 +38,7 @@ type OrderDetailWithBook struct {
 	BookTitle     string
 	Description   string
 	TotalPage     int
+	PublishYear   int
 	AuthorName    string
 	PublisherName string
 }
@@ -48,13 +49,13 @@ type OrderWithDetailCount struct {
 }
 
 type OrderResponse struct {
-	Id               int64  `json:"id"`
-	OrderNumber      string `json:"order_number"`
-	PaymentStatus    string `json:"payment_status"`
-	PaymentDate      *time.Time
-	UserId           int64
-	TotalOrderDetail int64     `json:"total_order_detail,omitempty"`
-	CreatedAt        time.Time `json:"created_at,omitempty"`
+	Id               int64      `json:"id"`
+	OrderNumber      string     `json:"order_number"`
+	PaymentStatus    string     `json:"payment_status"`
+	PaymentDate      *time.Time `json:"payment_date"`
+	UserId           int64      `json:"user_id"`
+	TotalOrderDetail int64      `json:"total_order_detail,omitempty"`
+	CreatedAt        time.Time  `json:"created_at,omitempty"`
 }
 
 type OrderDetailResponse struct {
@@ -82,6 +83,7 @@ type OrderRepository interface {
 	GetCartItems(ctx context.Context, tx pgx.Tx, userID int64) ([]*CartItem, error)
 	ClearCart(ctx context.Context, tx pgx.Tx, userID int64) error
 
+	IsOrderOwnedByUser(ctx context.Context, orderID int64, userID int64) (bool, error)
 	GetOrderByUserID(ctx context.Context, userID int64) ([]OrderWithDetailCount, error)
 	GetOrderDetailWithBook(ctx context.Context, orderID int64) ([]OrderDetailWithBook, error)
 }
@@ -89,5 +91,5 @@ type OrderRepository interface {
 type OrderUsecase interface {
 	CreateOrder(ctx context.Context, userID int64) (orderResp OrderResponse, err error)
 	GetOrderByUser(ctx context.Context, userID int64) ([]OrderResponse, error)
-	GetOrderDetails(ctx context.Context, orderID int64) ([]OrderDetailResponse, error)
+	GetOrderDetails(ctx context.Context, orderID, userID int64) ([]OrderDetailResponse, error)
 }

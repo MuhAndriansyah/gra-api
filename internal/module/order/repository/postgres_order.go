@@ -13,6 +13,22 @@ type postgresOrderRepository struct {
 	conn *pgxpool.Pool
 }
 
+// IsOrderOwnedByUser implements domain.OrderRepository.
+func (p *postgresOrderRepository) IsOrderOwnedByUser(ctx context.Context, orderID int64, userID int64) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS (
+				SELECT 1 FROM orders WHERE id = $1 AND user_id = $2
+			  );`
+
+	err := p.conn.QueryRow(ctx, query, orderID, userID).Scan(&exists)
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // GetOrderByUserID implements domain.OrderRepository.
 func (p *postgresOrderRepository) GetOrderByUserID(ctx context.Context, userID int64) ([]domain.OrderWithDetailCount, error) {
 	query := `SELECT 
@@ -63,18 +79,19 @@ func (p *postgresOrderRepository) GetOrderByUserID(ctx context.Context, userID i
 // GetOrderDetail implements domain.OrderRepository.
 func (p *postgresOrderRepository) GetOrderDetailWithBook(ctx context.Context, orderID int64) ([]domain.OrderDetailWithBook, error) {
 	query := `SELECT 
-					od.id, 
-					od.order_id, 
-					od.book_id,
-					od.borrowing_date,
-					od.return_date,
-					od.created_at,
-					od.updated_at, 
-					b.title, 
-					b.description, 
-					b.total_page, 
-					a.name as author_name, 
-					p.name as publisher_name  
+				od.id, 
+				od.order_id, 
+				od.book_id,
+				od.borrowing_date,
+				od.return_date,
+				od.created_at,
+				od.updated_at, 
+				b.title, 
+				b.description, 
+				b.total_page, 
+				b.publish_year,
+				a.name as author_name, 
+				p.name as publisher_name  
 			  FROM order_details od
 			  JOIN books b ON od.book_id = b.id
 			  JOIN authors a ON b.author_id = a.id
@@ -105,6 +122,7 @@ func (p *postgresOrderRepository) GetOrderDetailWithBook(ctx context.Context, or
 			&od.BookTitle,
 			&od.Description,
 			&od.TotalPage,
+			&od.PublishYear,
 			&od.AuthorName,
 			&od.PublisherName)
 
