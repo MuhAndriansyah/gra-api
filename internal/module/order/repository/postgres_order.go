@@ -38,7 +38,8 @@ func (p *postgresOrderRepository) GetOrderByUserID(ctx context.Context, userID i
 				o.payment_status,
 				o.payment_date,
 				o.payment_method,
-				COUNT(od.id) AS total_order_details 
+				COUNT(od.id) AS total_order_details,
+				o.created_at
 			  FROM orders o
 			  LEFT JOIN order_details od ON o.id = od.order_id
 			  WHERE o.user_id = $1
@@ -64,7 +65,8 @@ func (p *postgresOrderRepository) GetOrderByUserID(ctx context.Context, userID i
 			&orderDetail.PaymentStatus,
 			&orderDetail.PaymentDate,
 			&orderDetail.PaymentMethod,
-			&orderDetail.TotalOrderDetail)
+			&orderDetail.TotalOrderDetail,
+			&orderDetail.CreatedAt)
 
 		if err != nil {
 			return nil, err

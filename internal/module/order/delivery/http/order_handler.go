@@ -18,20 +18,20 @@ func NewOrderHandler(r *echo.Group, ou domain.OrderUsecase) {
 		orderUsecase: ou,
 	}
 
-	r.POST("/orders", h.Store)
-	r.GET("/orders", h.Index)
-	r.GET("/orders/:id", h.Show)
+	r.POST("/orders", h.CreateOrder)
+	r.GET("/orders", h.ListOrders)
+	r.GET("/orders/:id", h.GetOrder)
 
 }
 
-func (h *OrderHandler) Index(c echo.Context) error {
+func (h *OrderHandler) ListOrders(c echo.Context) error {
 	user, ok := httpcontext.GetUserJWT(c)
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized access. Please log in to continue.")
 	}
 
 	ctx := c.Request().Context()
-	resp, err := h.orderUsecase.GetOrderByUser(ctx, user.ID)
+	resp, err := h.orderUsecase.GetUserOrderHistory(ctx, user.ID)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (h *OrderHandler) Index(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-func (h *OrderHandler) Store(c echo.Context) error {
+func (h *OrderHandler) CreateOrder(c echo.Context) error {
 	user, ok := httpcontext.GetUserJWT(c)
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized access. Please log in to continue.")
@@ -54,7 +54,7 @@ func (h *OrderHandler) Store(c echo.Context) error {
 	return c.JSON(http.StatusCreated, resp)
 }
 
-func (h *OrderHandler) Show(c echo.Context) error {
+func (h *OrderHandler) GetOrder(c echo.Context) error {
 	user, ok := httpcontext.GetUserJWT(c)
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized access. Please log in to continue.")
@@ -66,7 +66,7 @@ func (h *OrderHandler) Show(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	resp, err := h.orderUsecase.GetOrderDetails(ctx, id, user.ID)
+	resp, err := h.orderUsecase.GetUserOrderDetails(ctx, id, user.ID)
 	if err != nil {
 		return err
 	}

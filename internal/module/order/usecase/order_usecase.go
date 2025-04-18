@@ -16,8 +16,8 @@ type OrderUsecase struct {
 	orderRepo domain.OrderRepository
 }
 
-// GetOrderByUser implements domain.OrderUsecase.
-func (o *OrderUsecase) GetOrderByUser(ctx context.Context, userID int64) ([]domain.OrderResponse, error) {
+// GetUserOrderHistory implements domain.OrderUsecase.
+func (o *OrderUsecase) GetUserOrderHistory(ctx context.Context, userID int64) ([]domain.OrderResponse, error) {
 	orders, err := o.orderRepo.GetOrderByUserID(ctx, userID)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "usecase").Int64("userID", userID).Msg("failed to get order details by user_id")
@@ -40,8 +40,8 @@ func (o *OrderUsecase) GetOrderByUser(ctx context.Context, userID int64) ([]doma
 	return orderResponses, nil
 }
 
-// GetOrderDetails implements domain.OrderUsecase.
-func (o *OrderUsecase) GetOrderDetails(ctx context.Context, orderID, userID int64) ([]domain.OrderDetailResponse, error) {
+// GetUserOrderDetails implements domain.OrderUsecase.
+func (o *OrderUsecase) GetUserOrderDetails(ctx context.Context, orderID, userID int64) ([]domain.OrderDetailResponse, error) {
 
 	isOrderExists, err := o.orderRepo.IsOrderOwnedByUser(ctx, orderID, userID)
 
@@ -123,7 +123,7 @@ func (o *OrderUsecase) CreateOrder(ctx context.Context, userID int64) (orderResp
 	}
 
 	if len(items) > 3 {
-		return domain.OrderResponse{}, baseErr.NewBadRequestError("maximum three items")
+		return domain.OrderResponse{}, baseErr.NewBadRequestError("maximum 3 items")
 	}
 
 	orderNumberStr := generateOrderNumber()

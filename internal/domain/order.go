@@ -90,6 +90,6 @@ type OrderRepository interface {
 
 type OrderUsecase interface {
 	CreateOrder(ctx context.Context, userID int64) (orderResp OrderResponse, err error)
-	GetOrderByUser(ctx context.Context, userID int64) ([]OrderResponse, error)
-	GetOrderDetails(ctx context.Context, orderID, userID int64) ([]OrderDetailResponse, error)
+	GetUserOrderHistory(ctx context.Context, userID int64) ([]OrderResponse, error)
+	GetUserOrderDetails(ctx context.Context, orderID, userID int64) ([]OrderDetailResponse, error)
 }
