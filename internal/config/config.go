@@ -7,12 +7,13 @@ import (
 )
 
 type Config struct {
-	App   AppConfig
-	DB    DBConfig
-	Mail  MailConfig
-	Redis RedisConfig
-	AWS   AWSConfig
-	OAuth OauthConfig
+	App      AppConfig
+	DB       DBConfig
+	Mail     MailConfig
+	Redis    RedisConfig
+	AWS      AWSConfig
+	OAuth    OauthConfig
+	Midtrans MidtransConfig
 }
 
 func NewConfig(path string) (*Config, error) {
@@ -24,11 +25,12 @@ func NewConfig(path string) (*Config, error) {
 	}
 
 	return &Config{
-		App:   LoadAppConfig(),
-		DB:    LoadDBConfig(),
-		Mail:  LoadMailConfig(),
-		Redis: LoadRedisConfig(),
-		AWS:   LoadAwsConfig(),
-		OAuth: LoadOauthConfig(),
+		App:      LoadAppConfig(),
+		DB:       LoadDBConfig(),
+		Mail:     LoadMailConfig(),
+		Redis:    LoadRedisConfig(),
+		AWS:      LoadAwsConfig(),
+		OAuth:    LoadOauthConfig(),
+		Midtrans: LoadMidtransConfig(),
 	}, nil
 }

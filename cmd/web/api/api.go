@@ -4,6 +4,7 @@ import (
 	"backend-layout/helper"
 	errorHandler "backend-layout/internal/adapter/errors"
 	"backend-layout/internal/adapter/oauth"
+	paymentgateway "backend-layout/internal/adapter/payment_gateway"
 	"backend-layout/internal/config"
 	"backend-layout/internal/middleware"
 	authHttpDelivery "backend-layout/internal/module/auth/delivery/http"
@@ -24,6 +25,11 @@ import (
 	_orderRepository "backend-layout/internal/module/order/repository"
 	_orderUsecase "backend-layout/internal/module/order/usecase"
 
+	_paymentRepository "backend-layout/internal/module/payment/repository"
+	_paymentUsecase "backend-layout/internal/module/payment/usecase"
+
+	paymentHttpDelivery "backend-layout/internal/module/payment/delivery/http"
+
 	"backend-layout/internal/tasks"
 	"context"
 
@@ -37,19 +43,21 @@ type APIServer struct {
 	Pool            *pgxpool.Pool
 	TaskDistributor tasks.TaskDistributor
 	// S3              storage.Uploader
-	Conf  *config.Config
-	OAuth *oauth.Oauth
-	rdb   *redis.Client
+	Conf           *config.Config
+	OAuth          *oauth.Oauth
+	rdb            *redis.Client
+	MidtransClient *paymentgateway.MidtransClient
 }
 
-func NewAPIServer(pool *pgxpool.Pool, taskDistributor tasks.TaskDistributor, conf *config.Config, oauth *oauth.Oauth, rdb *redis.Client) *APIServer {
+func NewAPIServer(pool *pgxpool.Pool, taskDistributor tasks.TaskDistributor, conf *config.Config, oauth *oauth.Oauth, rdb *redis.Client, midtransClient *paymentgateway.MidtransClient) *APIServer {
 	return &APIServer{
 		Pool:            pool,
 		TaskDistributor: taskDistributor,
 		// S3:              s3,
-		Conf:  conf,
-		OAuth: oauth,
-		rdb:   rdb,
+		Conf:           conf,
+		OAuth:          oauth,
+		rdb:            rdb,
+		MidtransClient: midtransClient,
 	}
 }
 
@@ -88,6 +96,10 @@ func (s *APIServer) Run(ctx context.Context) error {
 	orderRepository := _orderRepository.NewPostgresOrderRepository(s.Pool)
 	orderUsecase := _orderUsecase.NewOrderUsecase(orderRepository)
 	orderHttpDelivery.NewOrderHandler(r, orderUsecase)
+
+	paymentRepository := _paymentRepository.NewPostgresPaymentRepository(s.Pool)
+	paymentUsecase := _paymentUsecase.NewPaymentUsecase(paymentRepository, orderRepository, s.MidtransClient)
+	paymentHttpDelivery.NewPaymentHandler(r, paymentUsecase)
 
 	go func() {
 		<-ctx.Done()

@@ -80,12 +80,15 @@ type OrderRepository interface {
 	SaveOrder(ctx context.Context, tx pgx.Tx, order *Order) (id int64, err error)
 	SaveOrderDetailsFromCart(ctx context.Context, tx pgx.Tx, items []*CartItem, orderID, userID int64) error
 
+	GetByIDAndUserID(ctx context.Context, id, userId int64) (*Order, error)
 	GetCartItems(ctx context.Context, tx pgx.Tx, userID int64) ([]*CartItem, error)
-	ClearCart(ctx context.Context, tx pgx.Tx, userID int64) error
-
-	IsOrderOwnedByUser(ctx context.Context, orderID int64, userID int64) (bool, error)
-	GetOrderByUserID(ctx context.Context, userID int64) ([]OrderWithDetailCount, error)
+	GetOrdersByUserID(ctx context.Context, userID int64) ([]OrderWithDetailCount, error)
 	GetOrderDetailWithBook(ctx context.Context, orderID int64) ([]OrderDetailWithBook, error)
+	GetPendingOrder(ctx context.Context, orderNumber string, userId int64) (bool, error)
+
+	UpdateStock(ctx context.Context, tx pgx.Tx, orderID int64) error
+	UpdateBorrowDates(ctx context.Context, tx pgx.Tx, orderId int64) error
+	ClearCart(ctx context.Context, tx pgx.Tx, userID int64) error
 }
 
 type OrderUsecase interface {

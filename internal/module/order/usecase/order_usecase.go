@@ -18,7 +18,7 @@ type OrderUsecase struct {
 
 // GetUserOrderHistory implements domain.OrderUsecase.
 func (o *OrderUsecase) GetUserOrderHistory(ctx context.Context, userID int64) ([]domain.OrderResponse, error) {
-	orders, err := o.orderRepo.GetOrderByUserID(ctx, userID)
+	orders, err := o.orderRepo.GetOrdersByUserID(ctx, userID)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "usecase").Int64("userID", userID).Msg("failed to get order details by user_id")
 		return nil, baseErr.NewInternalServerError("failed to get orders")
@@ -43,14 +43,10 @@ func (o *OrderUsecase) GetUserOrderHistory(ctx context.Context, userID int64) ([
 // GetUserOrderDetails implements domain.OrderUsecase.
 func (o *OrderUsecase) GetUserOrderDetails(ctx context.Context, orderID, userID int64) ([]domain.OrderDetailResponse, error) {
 
-	isOrderExists, err := o.orderRepo.IsOrderOwnedByUser(ctx, orderID, userID)
+	_, err := o.orderRepo.GetByIDAndUserID(ctx, orderID, userID)
 
 	if err != nil {
-		return nil, fmt.Errorf("check order ownership failed: %w", err)
-	}
-
-	if !isOrderExists {
-		return nil, baseErr.NewNotFoundError("order not found")
+		return nil, err
 	}
 
 	orderDetailsWithBookInfo, err := o.orderRepo.GetOrderDetailWithBook(ctx, orderID)
@@ -153,6 +149,13 @@ func (o *OrderUsecase) CreateOrder(ctx context.Context, userID int64) (orderResp
 		log.Error().Err(err).Str("layer", "usecase").Int64("userID", userID).Msg("failed to clear cart")
 
 		return domain.OrderResponse{}, baseErr.NewInternalServerError("failed to create order")
+	}
+
+	err = o.orderRepo.UpdateStock(ctx, tx, id)
+	if err != nil {
+		log.Error().Err(err).Str("layer", "usecase").Int64("userID", userID).Msg("failed to update stock")
+
+		return domain.OrderResponse{}, baseErr.NewInternalServerError("failed to update stock")
 	}
 
 	if err = tx.Commit(ctx); err != nil {

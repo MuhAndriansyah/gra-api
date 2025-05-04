@@ -3,6 +3,7 @@ package repository
 import (
 	"backend-layout/internal/domain"
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -13,24 +14,82 @@ type postgresOrderRepository struct {
 	conn *pgxpool.Pool
 }
 
-// IsOrderOwnedByUser implements domain.OrderRepository.
-func (p *postgresOrderRepository) IsOrderOwnedByUser(ctx context.Context, orderID int64, userID int64) (bool, error) {
+var (
+	ErrOrderNotFound = errors.New("order not found")
+)
+
+// GetByID implements domain.OrderRepository.
+func (p *postgresOrderRepository) GetByIDAndUserID(ctx context.Context, id, userId int64) (*domain.Order, error) {
+	query := `SELECT id, order_number, user_id, payment_status, payment_date, payment_method, created_at, updated_at 
+	          FROM orders 
+			  WHERE id = $1 AND user_id = $2;`
+
+	var o domain.Order
+	err := p.conn.QueryRow(ctx, query, id, userId).Scan(&o.Id, &o.OrderNumber, &o.UserId, &o.PaymentStatus, &o.PaymentDate, &o.PaymentMethod, &o.CreatedAt, &o.UpdatedAt)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
+	}
+
+	return &o, nil
+}
+
+// GetPendingOrder implements domain.OrderRepository.
+func (p *postgresOrderRepository) GetPendingOrder(ctx context.Context, orderNumber string, userId int64) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM orders WHERE order_number = $1 AND payment_status = 'Pending' AND user_id = $2);`
 	var exists bool
-	query := `SELECT EXISTS (
-				SELECT 1 FROM orders WHERE id = $1 AND user_id = $2
-			  );`
-
-	err := p.conn.QueryRow(ctx, query, orderID, userID).Scan(&exists)
-
+	err := p.conn.QueryRow(ctx, query, orderNumber, userId).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
-
 	return exists, nil
 }
 
+// UpdateBorrowDates implements domain.PaymentRepository.
+func (p *postgresOrderRepository) UpdateBorrowDates(ctx context.Context, tx pgx.Tx, orderId int64) error {
+	query := `UPDATE order_details
+	          SET borrowing_date = timezone('UTC', now()),
+			  return_date = timezone('UTC', now() + interval '7 days')
+			  WHERE order_id = $1;`
+
+	cmdTag, err := tx.Exec(ctx, query, orderId)
+
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("no rows updated for order_id %v", orderId)
+	}
+
+	return nil
+}
+
+// UpdateStock implements domain.OrderRepository.
+func (p *postgresOrderRepository) UpdateStock(ctx context.Context, tx pgx.Tx, orderID int64) error {
+	query := `UPDATE books b 
+			  SET in_stock = in_stock - 1
+			  FROM order_details od
+			  WHERE od.book_id = b.id AND b.in_stock > 0 AND od.order_id = $1;`
+
+	cmdTag, err := tx.Exec(ctx, query, orderID)
+
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("stock not enough")
+	}
+
+	return nil
+}
+
 // GetOrderByUserID implements domain.OrderRepository.
-func (p *postgresOrderRepository) GetOrderByUserID(ctx context.Context, userID int64) ([]domain.OrderWithDetailCount, error) {
+func (p *postgresOrderRepository) GetOrdersByUserID(ctx context.Context, userID int64) ([]domain.OrderWithDetailCount, error) {
 	query := `SELECT 
 				o.id AS order_id,
 				o.order_number,

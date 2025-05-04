@@ -5,6 +5,7 @@ import (
 	"backend-layout/internal/adapter/db"
 	"backend-layout/internal/adapter/instrumentation"
 	"backend-layout/internal/adapter/oauth"
+	paymentgateway "backend-layout/internal/adapter/payment_gateway"
 	"backend-layout/internal/adapter/worker"
 	"backend-layout/internal/config"
 	"backend-layout/internal/tasks"
@@ -69,7 +70,9 @@ func main() {
 	// 	return
 	// }
 
-	srv := api.NewAPIServer(dbpool, redisTaskDistributor, cfg, oauth2, rdb)
+	midtransClient := paymentgateway.InitMidtrans(cfg.Midtrans)
+
+	srv := api.NewAPIServer(dbpool, redisTaskDistributor, cfg, oauth2, rdb, midtransClient)
 
 	waitGroup, ctx := errgroup.WithContext(ctx)
 
