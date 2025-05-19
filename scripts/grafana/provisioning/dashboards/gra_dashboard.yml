@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - allowUiUpdates: true
+    name: 'GRA Dashboards'
+    type: file
+    disableDeletion: false
+    options:
+      foldersFromFilesStructure: true
+      path: /etc/grafana/gra-dashboards
+    updateIntervalSeconds: 60

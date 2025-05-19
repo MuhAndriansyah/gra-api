@@ -20,6 +20,8 @@ import (
 	userHttpDelivery "backend-layout/internal/module/user/delivery/http"
 	_userRepository "backend-layout/internal/module/user/repository"
 	_userUsecase "backend-layout/internal/module/user/usecase"
+	"fmt"
+	"time"
 
 	orderHttpDelivery "backend-layout/internal/module/order/delivery/http"
 	_orderRepository "backend-layout/internal/module/order/repository"
@@ -35,6 +37,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
@@ -61,16 +65,33 @@ func NewAPIServer(pool *pgxpool.Pool, taskDistributor tasks.TaskDistributor, con
 	}
 }
 
+var HttpRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "http_requests_total",
+	Help: "Total number of HTTP requests",
+}, []string{"handler", "method", "code"})
+
+var HttpRequestsDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "http_request_duration_seconds",
+	Help:    "Histogram of response time for handler",
+	Buckets: prometheus.DefBuckets,
+}, []string{"handler", "method", "code"})
+
 func (s *APIServer) Run(ctx context.Context) error {
 	e := echo.New()
 
 	e.Validator = helper.NewValidator()
 	e.Use(middleware.CorrelationIDMiddleware)
+	e.Use(PrometheusMetricsMiddleware)
 	e.HTTPErrorHandler = errorHandler.CustomHTTPErrorHandler
 
 	v1 := e.Group("/api/v1")
 	r := v1.Group("")
 	p := v1.Group("/public")
+
+	prometheus.MustRegister(HttpRequestsTotal)
+	prometheus.MustRegister(HttpRequestsDuration)
+
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	r.Use(middleware.JWTAuthenticator())
 
@@ -110,4 +131,16 @@ func (s *APIServer) Run(ctx context.Context) error {
 	}()
 
 	return e.Start(":3000")
+}
+
+func PrometheusMetricsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		start := time.Now()
+		err := next(c)
+		duration := time.Since(start).Seconds()
+
+		HttpRequestsTotal.WithLabelValues(c.Request().URL.Path, c.Request().Method, fmt.Sprintf("%v", c.Response().Status)).Inc()
+		HttpRequestsDuration.WithLabelValues(c.Request().URL.Path, c.Request().Method, fmt.Sprintf("%v", c.Response().Status)).Observe(duration)
+		return err
+	}
 }

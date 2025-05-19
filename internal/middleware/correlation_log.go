@@ -7,7 +7,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const CorrelationIDKey string = "correlation_id"
+type contextKey string
+
+const CorrelationIDKey contextKey = "correlation_id"
 
 func CorrelationIDMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
