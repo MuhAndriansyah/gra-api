@@ -2,6 +2,9 @@ package api
 
 import (
 	"backend-layout/helper"
+	"errors"
+	"net/http"
+
 	errorHandler "backend-layout/internal/adapter/errors"
 	"backend-layout/internal/adapter/oauth"
 	paymentgateway "backend-layout/internal/adapter/payment_gateway"
@@ -130,17 +133,28 @@ func (s *APIServer) Run(ctx context.Context) error {
 		}
 	}()
 
-	return e.Start(":3000")
+	return e.Start(":8080")
 }
 
 func PrometheusMetricsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		start := time.Now()
 		err := next(c)
+
+		status := c.Response().Status
+		if err != nil {
+			var baseErr errorHandler.BaseError
+			if errors.As(err, &baseErr) {
+				status = baseErr.Code
+			} else {
+				status = http.StatusInternalServerError
+			}
+		}
+
 		duration := time.Since(start).Seconds()
 
-		HttpRequestsTotal.WithLabelValues(c.Request().URL.Path, c.Request().Method, fmt.Sprintf("%v", c.Response().Status)).Inc()
-		HttpRequestsDuration.WithLabelValues(c.Request().URL.Path, c.Request().Method, fmt.Sprintf("%v", c.Response().Status)).Observe(duration)
+		HttpRequestsTotal.WithLabelValues(c.Path(), c.Request().Method, fmt.Sprintf("%v", status)).Inc()
+		HttpRequestsDuration.WithLabelValues(c.Path(), c.Request().Method, fmt.Sprintf("%v", status)).Observe(duration)
 		return err
 	}
 }

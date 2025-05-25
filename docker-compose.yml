@@ -1,15 +1,18 @@
 services:
-  backend:
-    build: .
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/libraries?sslmode=disable
-    depends_on:
-      db:
-        condition: service_healthy
+  # backend:
+  #   build: .
+  #   ports:
+  #     - "8080:8080"
+  #   env_file: .env
+  #   environment:
+  #     - DATABASE_URL=postgres://andre-dev:mysecretpassword@postgres:5432/library_db?sslmode=disable
+  #   volumes:
+  #     - ./.env:/app/.env:ro 
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+    
+
   postgres:
     image: postgres:14.13-alpine
     restart: always
@@ -18,19 +21,16 @@ services:
       - POSTGRES_PASSWORD=mysecretpassword
       - POSTGRES_DB=library_db
     ports:
-      - 5433:5432
-    expose:
-      - 5433
+      - 5432:5432
     volumes:
       - db:/var/lib/postgresql/data
-      - .database/init.sql:/docker-entrypoint-initdb.d/database.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/database.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "libraries"]
+      test: ["CMD-SHELL", "pg_isready -U andre-dev -d library_db"]
       interval: 10s
       timeout: 5s
       retries: 3
-    networks:
-      - learn_go
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -44,28 +44,30 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.retention.time=5m"
       - "--storage.tsdb.retention.size=10GB"
+
   grafana:
-    image: grafana:12.0.0
+    image: grafana/grafana:12.0.0
     restart: always
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_AUTH_ANONYMOUSE_ENABLED=true
-      - GF_AUTH_ANNONYMOUS_ORG_ROLE=Viewer
-      - GF_AUTH_ANNONYMOUS_ORG_ID=1
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ORG_ID=1
     volumes:
       - ./scripts/grafana/provisioning:/etc/grafana/provisioning
-      - ./scripts/grafana/dashboards:/etc/grafana/demo-dashboards
+      - ./scripts/grafana/dashboards:/etc/grafana/gra-dashboards
       - grafana-storage:/var/lib/grafana
+
   redis:
     image: redis:7.4.1-alpine3.20
     ports:
       - 6380:6379
     expose:
-      - 6380
+      - 6379
+
 volumes:
-    db:
-    prometheus-storage:
-networks:
-    learn_go:
+  db:
+  prometheus-storage:
+  grafana-storage:

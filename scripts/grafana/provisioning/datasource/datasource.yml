@@ -6,6 +6,6 @@ datasource:
     access: proxy
     editable: false
     isDefault: true
-    url: http://host.docker.internal:90909
+    url: http://host.docker.internal:9090
     version: 1
     updateIntervalSeconds: 5

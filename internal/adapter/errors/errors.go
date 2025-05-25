@@ -19,10 +19,10 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	var errorDetails any
 
 	// Prioritaskan baseError
-	var baseErr baseError
+	var baseErr BaseError
 	if errors.As(err, &baseErr) {
-		code = baseErr.code
-		message = baseErr.message
+		code = baseErr.Code
+		message = baseErr.Message
 	} else if httpError, ok := err.(*echo.HTTPError); ok {
 		code = httpError.Code
 		message = fmt.Sprintf("%v", httpError.Message)
@@ -51,42 +51,42 @@ type ErrorResponse struct {
 	Errors  any    `json:"errors,omitempty"`
 }
 
-type baseError struct {
-	code    int
-	message string
+type BaseError struct {
+	Code    int
+	Message string
 }
 
-func newBaseError(code int, msg string) baseError {
-	return baseError{
-		code:    code,
-		message: msg,
+func newBaseError(code int, msg string) BaseError {
+	return BaseError{
+		Code:    code,
+		Message: msg,
 	}
 }
 
-func (err baseError) Error() string {
-	return strings.ToLower(err.message)
+func (err BaseError) Error() string {
+	return strings.ToLower(err.Message)
 }
 
-func NewNotFoundError(message string) baseError {
+func NewNotFoundError(message string) BaseError {
 	return newBaseError(http.StatusNotFound, message)
 }
 
-func NewForbiddenError(message string) baseError {
+func NewForbiddenError(message string) BaseError {
 	return newBaseError(http.StatusForbidden, message)
 }
 
-func NewBadRequestError(message string) baseError {
+func NewBadRequestError(message string) BaseError {
 	return newBaseError(http.StatusBadRequest, message)
 }
 
-func NewConflictError(message string) baseError {
+func NewConflictError(message string) BaseError {
 	return newBaseError(http.StatusConflict, message)
 }
 
-func NewUnauthorized(message string) baseError {
+func NewUnauthorized(message string) BaseError {
 	return newBaseError(http.StatusUnauthorized, message)
 }
 
-func NewInternalServerError(message string) baseError {
+func NewInternalServerError(message string) BaseError {
 	return newBaseError(http.StatusInternalServerError, message)
 }

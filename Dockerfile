@@ -8,7 +8,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -v -o main cmd/web/main.go
 
 FROM alpine:3.21
 
-RUN apk --no-cahce add ca-certificates
+RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
